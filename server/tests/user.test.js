@@ -3,7 +3,7 @@
 //Imports
 import mongoose from 'mongoose';
 import chai, { expect } from 'chai';
-import User from '../models/user.model';
+import converter from '../models/user.model';
 
 chai.config.includeStack = true;
 
@@ -17,6 +17,10 @@ before((done) => {
 	db.on('error', console.error.bind(console, 'connection error'));
 	db.once('open', function() {
 		console.log('We are connected to test database!');
+		//Drop previous test database before test run
+		for (var collection in db.collections) {
+			db.collections[collection].remove(function() {});
+		}
 		done();
 	});
 });
@@ -31,28 +35,52 @@ after((done) => {
 // Describe tests
 describe('## New user', () => {
 	describe('#Create()', () => {
-		it('should create a new User', (done) => {
-			// Create a User object to pass to User.addUser()
-			let u = User({
-				id: Math.random(),
-				email: Math.random() + 'test@mymail.com',
-				name: 'alpha',
-				age: 10,
-				addresses: [
-					{
-						city: 'gurugram',
-						state: 'haryana'
-					},
-					{
-						city: 'noida',
-						state: 'U.P'
-					}
-				],
-				dateOfBirth: new Date(Date.now())
-			});
-
+		//Given type String A
+		/*
+			Put given type string A here
+		 */
+		let a = `type Address {
+		city: String,
+		state: String
+		}`;
+		//Given type String B
+		/*
+			Put given type string B here
+		 */
+		let b = `type User @model {
+		id: String! @unique,
+		email: String! @unique,
+		name: String!,
+		age: Int,
+		addresses: [Address],
+		dateOfBirth: Date
+		}`;
+		converter.setStrings(a,b);
+		// Verify a model based on given strings
+		/*
+			Put model values to verify
+		 */
+		let u = new converter.userModel({
+			id: Math.random(),
+			email: Math.random() + 'test@mymail.com',
+			name: 'alpha',
+			age: 10,
+			addresses: [
+				{
+					city: 'gurugram',
+					state: 'haryana'
+				},
+				{
+					city: 'noida',
+					state: 'U.P'
+				}
+			],
+			dateOfBirth: new Date(Date.now())
+		});
+		
+		it('should create a new model', (done) => {
 			try{
-				User.addUser(u)
+				converter.userModel.addUser(u)
 				.then(savedUser => {
 					expect(savedUser.id).to.equal(u.id);
 					expect(savedUser.email).to.equal(u.email);
@@ -65,151 +93,12 @@ describe('## New user', () => {
 					expect(savedUser.dateOfBirth).to.equal(u.dateOfBirth);
 					done();
 				})
-				.catch(done);
+				.catch(e => {
+					throw ('model already exist');
+					done();
+				});
 			}
 			catch(e){
-				done();
-			}
-		});
-
-		it('should not create a new User without email', (done) => {
-			// Create a User object to pass to User.addUser()
-			let u = User({
-				id: Math.random(),
-				name: 'alpha',
-				age: 10,
-				addresses: [
-					{
-						city: 'gurugram',
-						state: 'haryana'
-					},
-					{
-						city: 'noida',
-						state: 'U.P'
-					}
-				],
-				dateOfBirth: new Date(Date.now())
-			});
-			try{
-				User.addUser(u).then().catch(err => {
-					expect(err.errors.email).to.exist;
-					done();
-				});
-			} catch(e){
-				done();
-			}
-		});
-
-		it('should not create a new User without id', (done) => {
-			// Create a User object to pass to User.addUser()
-			let u = User({
-				email: Math.random() + 'test@mymail.com',
-				name: 'alpha',
-				age: 10,
-				addresses: [
-					{
-						city: 'gurugram',
-						state: 'haryana'
-					},
-					{
-						city: 'noida',
-						state: 'U.P'
-					}
-				],
-				dateOfBirth: new Date(Date.now())
-			});
-			try{
-				User.addUser(u).then().catch(err => {
-					expect(err.errors.id).to.exist;
-					done();
-				});
-			} catch(e){
-				done();
-			}
-		});
-
-		it('should not create a new User without name', (done) => {
-			// Create a User object to pass to User.addUser()
-			let u = User({
-				id: Math.random(),
-				email: Math.random() + 'test@mymail.com',
-				age: 10,
-				addresses: [
-					{
-						city: 'gurugram',
-						state: 'haryana'
-					},
-					{
-						city: 'noida',
-						state: 'U.P'
-					}
-				],
-				dateOfBirth: new Date(Date.now())
-			});
-			try{
-				User.addUser(u).then().catch(err => {
-					expect(err.errors.name).to.exist;
-					done();
-				});
-			} catch(e){
-				done();
-			}
-		});
-
-		it('should not create a new User with same id', (done) => {
-			let id = Math.random();
-			// Create a User object to pass to User.addUser()
-			let u = User({
-				id: id,
-				email: Math.random() + 'test@mymail.com',
-				age: 10,
-				addresses: [
-					{
-						city: 'gurugram',
-						state: 'haryana'
-					},
-					{
-						city: 'noida',
-						state: 'U.P'
-					}
-				],
-				dateOfBirth: new Date(Date.now())
-			});
-			try{
-				User.addUser(u).then(User.addUser(u)).then().catch(err => {
-					expect(err.errors).to.exist;
-					done();
-				});
-			} catch(e){
-				done();
-			}
-		});
-
-		it('should not create a new User with same email', (done) => {
-			let email = Math.random() + 'test@mymail.com';
-			// Create a User object to pass to User.addUser()
-			let u = User({
-				id: Math.random(),
-				email: email,
-				age: 10,
-				addresses: [
-					{
-						city: 'gurugram',
-						state: 'haryana'
-					},
-					{
-						city: 'noida',
-						state: 'U.P'
-					}
-				],
-				dateOfBirth: new Date(Date.now())
-			});
-			try{
-				User.addUser(u).then(User.addUser(u)).then().catch(err => {
-					expect(err.errors).to.exist;
-					done();
-				});
-			} catch(e){
 				done();
 			}
 		});
