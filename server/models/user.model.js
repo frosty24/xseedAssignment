@@ -7,7 +7,6 @@ const AddressSchema = new mongoose.Schema({
   state: String
 });
 
-
 //User Schema
 const UserSchema = new mongoose.Schema({
 	id: {type: String, required: true, unique: true, index: true},
@@ -24,7 +23,7 @@ let UserModel = mongoose.model('User', UserSchema);
 // Add user to database
 UserModel.addUser = (user) => {
     return user.save();
-}
+};
 
 //Export User Model
 export default UserModel;
